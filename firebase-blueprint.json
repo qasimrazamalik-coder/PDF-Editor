@@ -1,0 +1,23 @@
+{
+  "entities": {
+    "Document": {
+      "title": "Document Metadata",
+      "description": "Metadata for processed PDF documents including AI summaries.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Original file name" },
+        "size": { "type": "number", "description": "File size in bytes" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" },
+        "summary": { "type": "string", "description": "AI generated summary text" },
+        "userId": { "type": "string", "description": "ID of the user who uploaded the document" }
+      },
+      "required": ["name", "size", "updatedAt", "userId"]
+    }
+  },
+  "firestore": {
+    "documents": {
+      "schema": "Document",
+      "description": "Collection of document metadata entries."
+    }
+  }
+}

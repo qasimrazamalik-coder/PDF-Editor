@@ -1,0 +1,6 @@
+{
+  "name": "LexiCloud PDF 3D",
+  "description": "An immersive 3D PDF ecosystem featuring AI-powered summarization, high-fidelity editing, and a futuristic Knowledge Hub powered by Three.js.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["AI Summarization", "PDF Editing", "3D Visualization"]
+}

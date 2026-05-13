@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Primitive Definition
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Document Validation Helper
+    function isValidDocument(data) {
+      return data.keys().hasAll(['name', 'size', 'updatedAt', 'userId']) 
+        && data.keys().size() <= 10 
+        && data.name is string && data.name.size() <= 512
+        && data.size is number && data.size >= 0
+        && data.updatedAt == request.time
+        && data.userId is string && data.userId == request.auth.uid
+        && (data.get('summary', '') is string && data.get('summary', '').size() <= 30000);
+    }
+
+    // 1. Mandatory Size Enforcements & Master Gate
+    match /documents/{docId} {
+      // Rule 3: Path Variable Hardening
+      allow get: if isSignedIn() && isOwner(existing().userId) && isValidId(docId);
+      
+      // Rule 8: Secure List Queries
+      allow list: if isSignedIn() && isOwner(resource.data.userId);
+
+      allow create: if isSignedIn() 
+        && isValidDocument(incoming()) 
+        && isValidId(docId)
+        && isOwner(incoming().userId);
+
+      allow update: if isSignedIn()
+        && isValidDocument(incoming())
+        && isOwner(existing().userId)
+        && isOwner(incoming().userId)
+        // Rule 9: Immortal Field Rule
+        && incoming().userId == existing().userId
+        // Rule 4: Tiered Identity Logic (Action-Based Update)
+        && incoming().diff(existing()).affectedKeys().hasOnly(['summary', 'updatedAt', 'name', 'size']);
+
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+  }
+}
